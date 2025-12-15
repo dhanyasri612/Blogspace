@@ -101,7 +101,7 @@ export default function CreatePost() {
           type="file"
           accept="image/*"
           onChange={(e) => setImage(e.target.files[0])}
-          className="mt-5 mx-5 p-3 mb-5 btn btn-primary "
+          className="mt-5 mx-2 p-3 mb-5 btn btn-primary "
           style={{ maxWidth: "800px" }}
         />
 
