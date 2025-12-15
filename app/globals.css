@@ -1,0 +1,451 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* FIX 1: Prevent horizontal scroll on all devices */
+html,
+body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* FIX 2: Contain blobs properly */
+.blob {
+  width: 200px;
+  height: 200px;
+  border-radius: 10%;
+  filter: blur(120px);
+  opacity: 1;
+  z-index: -1;
+  position: absolute;
+  pointer-events: none; /* Prevent interaction */
+}
+
+.bg-pink {
+  background: #ec7eba; /* pink-300 */
+}
+
+.bg-purple {
+  background: #c084fc; /* purple-400 */
+}
+
+/* NAVBAR FIXED AND CLEANED */
+
+.c-navbar {
+  display: flex;
+  align-items: center;
+  height: 70px;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(180, 180, 180, 0.3);
+  z-index: 999;
+}
+
+/* Inner container: fixed width + centered */
+.c-navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 1.5rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo */
+.c-navbar-logo {
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  color: #111;
+}
+
+/* Desktop menu */
+.c-navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0; /* FIX: avoid pushing layout */
+  z-index: 999 !important;
+}
+
+.c-navbar-menu li a {
+  text-decoration: none;
+  color: #111;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: 0.25s;
+}
+
+.c-navbar-menu li a:hover {
+  background: rgba(100, 100, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Hamburger */
+.c-navbar-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.c-navbar-toggle .bar {
+  width: 24px;
+  height: 3px;
+  background: #111;
+  transition: 0.3s;
+}
+
+/* Hamburger animation */
+.c-navbar-toggle.active .bar:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+.c-navbar-toggle.active .bar:nth-child(2) {
+  opacity: 0;
+}
+.c-navbar-toggle.active .bar:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* MOBILE MENU */
+@media (max-width: 880px) {
+  .c-navbar-toggle {
+    display: flex;
+  }
+
+  /* Desktop menu hidden */
+  .c-navbar-menu {
+    display: none;
+  }
+
+  /* Show mobile slide-out menu */
+  .c-navbar-menu.active {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 70px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    width: 250px;
+    height: calc(100vh - 70px);
+    padding: 2rem;
+    gap: 1.5rem;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.15);
+    z-index: 9999; /* Make sure it's on top of everything */
+
+    /* Make sure links are visible */
+    color: #111;
+  }
+
+  .c-navbar-menu.active li a {
+    color: #111; /* force black color */
+    display: block; /* take full width */
+    font-size: 18px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .c-navbar-menu.active li.c-profile-container {
+    width: auto;
+    margin-left: auto;
+  }
+
+  .c-navbar-menu.active .c-profile-icon {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+    justify-content: center;
+    padding: 0 !important;
+    color: white !important;
+  }
+}
+
+/* Profile Icon - Round with first letter */
+.c-profile-container {
+  position: relative;
+  list-style: none;
+}
+
+.c-profile-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white !important;
+  text-decoration: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  padding: 0;
+  border: none;
+  line-height: 1;
+}
+
+.c-profile-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: white !important;
+  text-decoration: none;
+}
+
+.c-profile-icon * {
+  color: white !important;
+}
+
+/* Profile Page Styles */
+.c-profile-page {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.c-profile-page-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 16px;
+  padding: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  color: white;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+
+.c-profile-page-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 600;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.c-profile-page-info {
+  flex: 1;
+}
+
+.c-profile-page-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+
+.c-profile-page-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin: 0;
+  color: white;
+}
+
+.c-profile-page-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.c-profile-page-card-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  color: #111;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 1rem;
+}
+
+.c-profile-page-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.c-profile-page-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.c-profile-page-detail-row:last-child {
+  border-bottom: none;
+}
+
+.c-profile-page-detail-label {
+  font-size: 16px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.c-profile-page-detail-value {
+  font-size: 16px;
+  color: #111;
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+  max-width: 60%;
+}
+
+.c-profile-page-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.c-profile-page-back-btn {
+  padding: 0.75rem 1.5rem;
+  background: #f3f4f6;
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.c-profile-page-back-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+  color: #111;
+  text-decoration: none;
+}
+
+.c-profile-page-logout-btn {
+  padding: 0.75rem 2rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.c-profile-page-logout-btn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Mobile Responsive for Profile Page */
+@media (max-width: 768px) {
+  .c-profile-page-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .c-profile-page-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 40px;
+  }
+
+  .c-profile-page-title {
+    font-size: 24px;
+  }
+
+  .c-profile-page-card {
+    padding: 1.5rem;
+  }
+
+  .c-profile-page-detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .c-profile-page-detail-value {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .c-profile-page-actions {
+    flex-direction: column;
+  }
+
+  .c-profile-page-back-btn,
+  .c-profile-page-logout-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.card-img-top {
+  height: 250px; /* fixed height */
+  object-fit: cover; /* makes the image cover the container without stretching */
+  width: 100%; /* full width of card */
+}
+
+.card-body,
+.card-title,
+.card-text,
+.card-footer {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.card-title h6 {
+  margin-bottom: 0.5rem; /* space between title and text */
+}
