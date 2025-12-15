@@ -98,12 +98,13 @@ export default function CreatePost() {
         />
 
         <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImage(e.target.files[0])}
-          className="mt-5 mx-2 p-3 mb-5 btn btn-primary "
-          style={{ maxWidth: "800px" }}
-        />
+  type="file"
+  accept="image/*"
+  onChange={(e) => setImage(e.target.files[0])}
+  className="form-control mt-3 mb-4"
+  required
+/>
+
 
         <div className="text-center"><button className="bg-black text-white px-4 py-2 ">Publish</button></div>
       </form>
