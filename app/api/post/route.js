@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import connectMongo from "../../../utils/connectMongo";
 import PostModel from "../../../models/postModel";
-import path from "path";
-import { writeFile } from "fs/promises";
+import cloudinary from "cloudinary";
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req) {
   try {
@@ -13,30 +18,27 @@ export async function POST(req) {
     const image = data.get("image");
     const author = data.get("author");
 
-    if (!title || !content || !author) {
+    if (!title || !content || !author || !image) {
       return NextResponse.json(
-        { error: "Title, content, and author are required" },
+        { error: "All fields are required" },
         { status: 400 }
       );
     }
 
-    let imagePath = "";
+    const bytes = await image.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    if (image && image.size > 0) {
-      const bytes = await image.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const fileName = Date.now() + "-" + image.name;
-      const filePath = path.join(process.cwd(), "public/uploads", fileName);
-
-      await writeFile(filePath, buffer);
-      imagePath = `/uploads/${fileName}`;
-    }
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.v2.uploader.upload_stream({ folder: "blogspace" }, (err, result) => {
+        if (err) reject(err);
+        resolve(result);
+      }).end(buffer);
+    });
 
     const newPost = await PostModel.create({
       title,
       description: content,
-      image: imagePath,
+      image: uploadResult.secure_url,
       user: author,
       created_at: new Date().toISOString(),
     });
@@ -44,9 +46,6 @@ export async function POST(req) {
     return NextResponse.json({ success: true, post: newPost });
   } catch (error) {
     console.error("Error creating post:", error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
