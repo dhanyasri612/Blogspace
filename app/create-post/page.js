@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 export default function CreatePost() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState(""); // ✅ image URL
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const router = useRouter();
 
+  // 🔐 Check login
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
 
@@ -31,6 +32,7 @@ export default function CreatePost() {
     }
   }, [router]);
 
+  // 📤 Submit post
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -40,22 +42,24 @@ export default function CreatePost() {
       return;
     }
 
-    if (!image) {
-      alert("Please select an image");
+    if (!image.startsWith("http")) {
+      alert("Please enter a valid image URL");
       return;
     }
 
     setSubmitting(true);
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("content", content);
-    formData.append("image", image);
-    formData.append("author", user._id);
-
     const res = await fetch("/api/posts", {
       method: "POST",
-      body: formData,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        content,
+        image,       // ✅ URL string
+        author: user._id,
+      }),
     });
 
     setSubmitting(false);
@@ -82,33 +86,51 @@ export default function CreatePost() {
         onSubmit={handleSubmit}
         className="max-w-xl mx-auto p-4 bg-light rounded"
       >
+        {/* Title */}
         <input
           type="text"
           placeholder="Post title"
           className="form-control mb-3 mt-3"
+          value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
 
+        {/* Content */}
         <textarea
           placeholder="Write your post..."
-          className="form-control mb-3 mt-5"
+          className="form-control mb-3 mt-4"
           rows="6"
+          value={content}
           onChange={(e) => setContent(e.target.value)}
           required
         />
 
+        {/* Image URL */}
         <input
-          type="file"
-          accept="image/*"
-          className="form-control mb-4 mt-5"
-          onChange={(e) => setImage(e.target.files[0])}
+          type="url"
+          placeholder="Image URL (https://...)"
+          className="form-control mb-4 mt-4"
+          value={image}
+          onChange={(e) => setImage(e.target.value)}
           required
         />
 
+        {/* Image Preview */}
+        {image && (
+          <div className="text-center mb-3">
+            <img
+              src={image}
+              alt="Preview"
+              style={{ maxHeight: "200px", borderRadius: "8px" }}
+              onError={(e) => (e.target.style.display = "none")}
+            />
+          </div>
+        )}
+
         <div className="text-center">
           <button
-            className="btn btn-dark mt-5"
+            className="btn btn-dark mt-3"
             disabled={submitting}
           >
             {submitting ? "Publishing..." : "Publish"}
