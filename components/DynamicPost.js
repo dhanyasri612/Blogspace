@@ -31,20 +31,20 @@ const DynamicPost = () => {
   /* =========================
      FETCH ALL POSTS
   ========================== */
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const res = await fetch("/api/posts");
-        if (!res.ok) throw new Error("Failed to fetch posts");
-        const data = await res.json();
-        setPost(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error(error);
-        setPost([]);
-      }
-    };
+  const fetchAllPosts = async () => {
+    try {
+      const res = await fetch("/api/posts");
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      const data = await res.json();
+      setPost(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setPost([]);
+    }
+  };
 
-    fetchPosts();
+  useEffect(() => {
+    fetchAllPosts();
   }, []);
 
   /* =========================
@@ -54,7 +54,13 @@ const DynamicPost = () => {
     if (e.type === "keydown" && e.key !== "Enter") return;
 
     const query = inputRef.current?.value?.trim();
-    if (!query) return;
+
+    // IF SEARCH IS EMPTY → LOAD ALL POSTS
+    if (!query) {
+      setSearchQuery("");
+      fetchAllPosts();
+      return;
+    }
 
     setSearch(true);
     setSearchQuery(query);
@@ -162,7 +168,7 @@ const DynamicPost = () => {
                 </button>
               )}
 
-              {/* IMAGE (SAFE RENDER) */}
+              {/* IMAGE */}
               {item.image && item.image.trim() !== "" && (
                 <Link href={`/post/${item._id}`}>
                   <img
@@ -174,7 +180,12 @@ const DynamicPost = () => {
               )}
 
               <div className="card-body">
-                <h6 className="card-title">{item.title}</h6>
+                <h6
+                  className="card-title"
+                  style={{ textAlign: "justify" }}
+                >
+                  {item.title}
+                </h6>
 
                 {item.author && (
                   <small className="text-muted d-block mb-2">
@@ -183,7 +194,12 @@ const DynamicPost = () => {
                   </small>
                 )}
 
-                <p className="card-text">{item.short_description}</p>
+                <p
+                  className="card-text"
+                  style={{ textAlign: "justify" }}
+                >
+                  {item.short_description}
+                </p>
               </div>
             </div>
           </div>
