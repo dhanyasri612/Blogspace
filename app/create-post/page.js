@@ -49,7 +49,7 @@ export default function CreatePost() {
 
     setSubmitting(true);
 
-    const res = await fetch("/api/posts", {
+    const res = await fetch("/api/post", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
