@@ -1,6 +1,6 @@
 "use client";
-import React from "react";
-import { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const DynamicPost = () => {
@@ -9,219 +9,193 @@ const DynamicPost = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
 
+  const inputRef = useRef(null);
+
+  /* =========================
+     LOAD USER FROM STORAGE
+  ========================== */
   useEffect(() => {
-    // Get current user from localStorage
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+
+    try {
       const storedUser = localStorage.getItem("user");
-      try {
-        if (
-          storedUser &&
-          storedUser !== "undefined" &&
-          storedUser !== "null" &&
-          storedUser.trim() !== ""
-        ) {
-          const parsedUser = JSON.parse(storedUser);
-          // Use setTimeout to avoid synchronous setState in effect
-          setTimeout(() => {
-            setUser(parsedUser);
-          }, 0);
-        }
-      } catch (error) {
-        console.error("Error parsing user data", error);
+      if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
+        setUser(JSON.parse(storedUser));
       }
+    } catch (error) {
+      console.error("Error parsing user:", error);
+      localStorage.removeItem("user");
     }
   }, []);
 
+  /* =========================
+     FETCH ALL POSTS
+  ========================== */
   useEffect(() => {
-    fetch("/api/posts")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        // Ensure data is always an array
-        if (Array.isArray(data)) {
-          setPost(data);
-        } else {
-          console.error("Expected array but got:", data);
-          setPost([]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching posts:", error);
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("/api/posts");
+        if (!res.ok) throw new Error("Failed to fetch posts");
+        const data = await res.json();
+        setPost(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error(error);
         setPost([]);
-      });
+      }
+    };
+
+    fetchPosts();
   }, []);
-  const inputRef = useRef("");
-  const searchPost = (e) => {
-    if (e.type === "keydown" && e.key !== "Enter") {
-      return;
-    }
-    const query = inputRef.current.value;
-    setSearchQuery(query);
+
+  /* =========================
+     SEARCH POSTS
+  ========================== */
+  const searchPost = async (e) => {
+    if (e.type === "keydown" && e.key !== "Enter") return;
+
+    const query = inputRef.current?.value?.trim();
+    if (!query) return;
+
     setSearch(true);
-    setTimeout(() => {
-      fetch("/api/posts?q=" + query)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        })
-        .then((data) => {
-          // Ensure data is always an array
-          if (Array.isArray(data)) {
-            setPost(data);
-          } else {
-            console.error("Expected array but got:", data);
-            setPost([]);
-          }
-        })
-        .catch((error) => {
-          console.error("Error searching posts:", error);
-          setPost([]);
-        })
-        .finally(() => setSearch(false));
-    }, 1000);
+    setSearchQuery(query);
+
+    try {
+      const res = await fetch(`/api/posts?q=${query}`);
+      if (!res.ok) throw new Error("Search failed");
+      const data = await res.json();
+      setPost(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setPost([]);
+    } finally {
+      setSearch(false);
+    }
   };
 
+  /* =========================
+     DELETE POST
+  ========================== */
   const handleDelete = async (postId, authorId, e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!user || !user._id) {
+    if (!user?._id) {
       alert("Please login to delete a post");
       return;
     }
 
-    // Verify user is the author
-    if (
-      user._id !== authorId?.toString() &&
-      user._id?.toString() !== authorId
-    ) {
+    if (user._id.toString() !== authorId.toString()) {
       alert("You can only delete your own posts");
       return;
     }
 
-    if (
-      !confirm(
-        "Are you sure you want to delete this post? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+    if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
       const res = await fetch(`/api/post/${postId}?userId=${user._id}`, {
         method: "DELETE",
       });
 
-      const data = await res.json();
+      if (!res.ok) throw new Error("Delete failed");
 
-      if (res.ok) {
-        // Remove the post from the list
-        setPost(post.filter((p) => p._id !== postId));
-        alert("Post deleted successfully!");
-      } else {
-        alert(data.error || "Failed to delete post");
-      }
+      setPost((prev) => prev.filter((p) => p._id !== postId));
+      alert("Post deleted successfully");
     } catch (error) {
-      console.error("Error deleting post:", error);
+      console.error(error);
       alert("Failed to delete post");
     }
   };
 
+  /* =========================
+     AUTHOR CHECK
+  ========================== */
   const isAuthor = (authorId) => {
     if (!user || !authorId) return false;
-    return (
-      user._id === authorId?.toString() || user._id?.toString() === authorId
-    );
+    return user._id.toString() === authorId.toString();
   };
 
   return (
     <div>
-      <div className="flex justify-content-end pl-5">
+      {/* SEARCH BAR */}
+      <div className="d-flex justify-content-end mb-4">
         <input
-          onKeyDown={searchPost}
           ref={inputRef}
+          onKeyDown={searchPost}
           type="text"
-          className="form-control mx-5"
+          className="form-control me-2"
           placeholder="Search Blogs..."
-          style={{ width: "500px" }}
+          style={{ width: "350px" }}
         />
         <button
-          className="btn btn-success "
-          style={{ height: "40px" }}
+          className="btn btn-success"
           onClick={searchPost}
           disabled={search}
         >
           {search ? "Searching..." : "Search"}
         </button>
       </div>
+
+      {/* POSTS */}
       <div className="row">
-        {Array.isArray(post) &&
-          post.map((item) => (
-            <div key={item._id} className="my-5 col-12 col-md-6 col-lg-4">
-              <div className="card  shadow-sm" style={{ position: "relative" }}>
-                {/* Delete button - only visible to author */}
-                {isAuthor(item.user?._id || item.user) && (
-                  <button
-                    onClick={(e) =>
-                      handleDelete(item._id, item.user?._id || item.user, e)
-                    }
-                    className="btn btn-danger btn-sm"
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      zIndex: 10,
-                      borderRadius: "50%",
-                      width: "30px",
-                      height: "30px",
-                      padding: 0,
-                      fontSize: "14px",
-                    }}
-                    title="Delete post"
-                  >
-                    ×
-                  </button>
+        {post.map((item) => (
+          <div key={item._id} className="col-12 col-md-6 col-lg-4 mb-4">
+            <div className="card h-100 shadow-sm position-relative">
+
+              {/* DELETE BUTTON */}
+              {isAuthor(item.author?._id || item.author) && (
+                <button
+                  className="btn btn-danger btn-sm position-absolute"
+                  style={{
+                    top: "10px",
+                    right: "10px",
+                    borderRadius: "50%",
+                    width: "30px",
+                    height: "30px",
+                    padding: 0,
+                  }}
+                  onClick={(e) =>
+                    handleDelete(item._id, item.author?._id || item.author, e)
+                  }
+                  title="Delete"
+                >
+                  ×
+                </button>
+              )}
+
+              {/* IMAGE (SAFE RENDER) */}
+              {item.image && item.image.trim() !== "" && (
+                <Link href={`/post/${item._id}`}>
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="card-img-top"
+                  />
+                </Link>
+              )}
+
+              <div className="card-body">
+                <h6 className="card-title">{item.title}</h6>
+
+                {item.author && (
+                  <small className="text-muted d-block mb-2">
+                    <strong>By:</strong>{" "}
+                    {item.author.username || item.author.email}
+                  </small>
                 )}
-                <div className="card-body">
-                  <Link href={"/post/" + item._id}>
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="card-img-top"
-                    />
-                  </Link>
-                </div>
-                <div className="card-title">
-                  <h6>{item.title}</h6>
-                </div>
-                {item.user && (
-                  <div className="px-3">
-                    <small className="text-muted">
-                      <strong>By:</strong>{" "}
-                      {item.user.username || item.user.email}
-                    </small>
-                  </div>
-                )}
-                <br />
-                <div className="p-3 card-text text-justify">
-                  {item.short_description}
-                </div>
-                <div className="card-footer text-muted"></div>
+
+                <p className="card-text">{item.short_description}</p>
               </div>
             </div>
-          ))}
+          </div>
+        ))}
       </div>
+
+      {/* NO RESULTS */}
       {post.length === 0 && !search && searchQuery && (
-        <div className="text-center mt-5 p-5">
-          <h3>
-            No Blogs Found for query : <b>{searchQuery}</b>
-          </h3>
+        <div className="text-center mt-5">
+          <h4>
+            No Blogs Found for <b>{searchQuery}</b>
+          </h4>
         </div>
       )}
     </div>
