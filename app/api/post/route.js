@@ -1,56 +1,42 @@
 import { NextResponse } from "next/server";
 import connectMongo from "../../../utils/connectMongo";
 import PostModel from "../../../models/postModel";
-import cloudinary from "cloudinary";
-import formidable from "formidable";
-
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-export const config = {
-  api: {
-    bodyParser: false, // important: disable default parser
-  },
-};
+import path from "path";
+import { writeFile } from "fs/promises";
 
 export async function POST(req) {
   try {
     await connectMongo();
+    const data = await req.formData();
+    const title = data.get("title");
+    const content = data.get("content");
+    const image = data.get("image");
+    const author = data.get("author");
 
-    // Parse form data
-    const form = new formidable.IncomingForm();
-    const data = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) reject(err);
-        else resolve({ fields, files });
-      });
-    });
-
-    const { title, content, author } = data.fields;
-    const imageFile = data.files.image;
-
-    if (!title || !content || !author || !imageFile) {
+    if (!title || !content || !author) {
       return NextResponse.json(
-        { error: "All fields are required" },
+        { error: "Title, content, and author are required" },
         { status: 400 }
       );
     }
 
-    // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.v2.uploader.upload(imageFile.filepath, { folder: "blogspace" }, (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+    let imagePath = "";
+
+    if (image && image.size > 0) {
+      const bytes = await image.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const fileName = Date.now() + "-" + image.name;
+      const filePath = path.join(process.cwd(), "public/uploads", fileName);
+
+      await writeFile(filePath, buffer);
+      imagePath = `/uploads/${fileName}`;
+    }
 
     const newPost = await PostModel.create({
       title,
       description: content,
-      image: uploadResult.secure_url,
+      image: imagePath,
       user: author,
       created_at: new Date().toISOString(),
     });
@@ -58,6 +44,9 @@ export async function POST(req) {
     return NextResponse.json({ success: true, post: newPost });
   } catch (error) {
     console.error("Error creating post:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }
